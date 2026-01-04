@@ -10,7 +10,7 @@ struct EmptyStateView: View {
             Text("Capture notes, import PDFs, or paste text to build your first study set.")
         } actions: {
             Button("New Study Set", systemImage: "plus", action: action)
-                .buttonStyle(.borderedProminent)
+                .glassButtonStyle(isProminent: true)
         }
         .padding()
     }

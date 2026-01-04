@@ -13,6 +13,10 @@ final class QuizViewModel {
         self.questions = questions
     }
 
+    var completedCount: Int {
+        selections.count
+    }
+
     func select(option: QuizOptionEntity, for question: QuizQuestionEntity) {
         selections[question.id] = option.id
         if option.isCorrect {

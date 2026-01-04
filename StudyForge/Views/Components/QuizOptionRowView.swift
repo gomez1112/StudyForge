@@ -20,8 +20,13 @@ struct QuizOptionRowView: View {
                 }
             }
             .padding()
-            .background(.ultraThinMaterial)
-            .clipShape(.rect(cornerRadius: 14, style: .continuous))
+            .glassSurface(cornerRadius: 16, isInteractive: true)
+            .overlay {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(isCorrect ? .green : .orange, lineWidth: 1)
+                }
+            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Option \(option.label): \(option.text)")

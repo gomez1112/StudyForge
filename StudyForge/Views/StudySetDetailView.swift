@@ -19,6 +19,10 @@ struct StudySetDetailView: View {
                             .font(.largeTitle.bold())
                         Text(viewModel.studySet.overview)
                             .foregroundStyle(.secondary)
+                        HStack {
+                            MetricPillView(title: "cards", value: viewModel.studySet.flashcards?.count ?? 0, systemImage: "rectangle.on.rectangle")
+                            MetricPillView(title: "questions", value: viewModel.studySet.quizQuestions?.count ?? 0, systemImage: "checklist")
+                        }
                     }
                 }
 

@@ -12,7 +12,6 @@ struct CardSurface<Content: View>: View {
             content
         }
         .padding()
-        .background(.thinMaterial)
-        .clipShape(.rect(cornerRadius: 20, style: .continuous))
+        .glassSurface(cornerRadius: 20)
     }
 }

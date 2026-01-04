@@ -12,6 +12,13 @@ struct FlashcardsView: View {
             if viewModel.cards.isEmpty {
                 ContentUnavailableView("No Flashcards", systemImage: "rectangle.on.rectangle")
             } else {
+                StudyProgressHeaderView(
+                    title: "Flashcards",
+                    subtitle: "Flip through key ideas and definitions.",
+                    progress: Double(viewModel.currentIndex + 1) / Double(viewModel.cards.count),
+                    detail: "Card \(viewModel.currentIndex + 1) of \(viewModel.cards.count)"
+                )
+
                 FlashcardCardView(
                     front: viewModel.cards[viewModel.currentIndex].front,
                     back: viewModel.cards[viewModel.currentIndex].back,
@@ -23,21 +30,21 @@ struct FlashcardsView: View {
                     Button("Previous", systemImage: "chevron.left") {
                         viewModel.previous()
                     }
-                    .buttonStyle(.bordered)
+                    .glassButtonStyle()
 
                     Spacer()
 
                     Button("Flip", systemImage: "arrow.2.circlepath") {
                         viewModel.flip()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .glassButtonStyle(isProminent: true)
 
                     Spacer()
 
                     Button("Next", systemImage: "chevron.right") {
                         viewModel.next()
                     }
-                    .buttonStyle(.bordered)
+                    .glassButtonStyle()
                 }
             }
         }

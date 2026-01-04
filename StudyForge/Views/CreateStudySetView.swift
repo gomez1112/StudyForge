@@ -10,47 +10,50 @@ struct CreateStudySetView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading) {
-                TextField("Study Set Title", text: $viewModel.title)
-                    .textFieldStyle(.roundedBorder)
+                CardSurface {
+                    VStack(alignment: .leading) {
+                        TextField("Study Set Title", text: $viewModel.title)
+                            .textFieldStyle(.roundedBorder)
 
-                Picker("Input", selection: $viewModel.selectedInput) {
-                    ForEach(InputSourceType.allCases) { source in
-                        Text(source.rawValue).tag(source)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                if viewModel.selectedInput == .photo {
-                    PhotosPicker(selection: $viewModel.photosPickerItem, matching: .images) {
-                        CardSurface {
-                            Label("Choose Photo", systemImage: "camera.viewfinder")
+                        Picker("Input", selection: $viewModel.selectedInput) {
+                            ForEach(InputSourceType.allCases) { source in
+                                Text(source.rawValue).tag(source)
+                            }
                         }
-                    }
-                    .onChange(of: viewModel.photosPickerItem) { _, newValue in
-                        viewModel.handlePhotoSelection(newValue)
-                    }
-                }
+                        .pickerStyle(.segmented)
 
-                if viewModel.selectedInput == .pdf {
-                    Button("Import PDF", systemImage: "doc.richtext") {
-                        isFileImporterPresented = true
-                    }
-                    .buttonStyle(.bordered)
-                    .fileImporter(isPresented: $isFileImporterPresented, allowedContentTypes: [.pdf]) { result in
-                        switch result {
-                        case .success(let url):
-                            viewModel.handlePDFSelection(url)
-                        case .failure(let error):
-                            viewModel.extractionError = error.localizedDescription
+                        if viewModel.selectedInput == .photo {
+                            PhotosPicker(selection: $viewModel.photosPickerItem, matching: .images) {
+                                Label("Choose Photo", systemImage: "camera.viewfinder")
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .onChange(of: viewModel.photosPickerItem) { _, newValue in
+                                viewModel.handlePhotoSelection(newValue)
+                            }
                         }
-                    }
-                }
 
-                if viewModel.isExtracting {
-                    HStack {
-                        ProgressView()
-                        Text("Extracting text…")
-                            .foregroundStyle(.secondary)
+                        if viewModel.selectedInput == .pdf {
+                            Button("Import PDF", systemImage: "doc.richtext") {
+                                isFileImporterPresented = true
+                            }
+                            .glassButtonStyle()
+                            .fileImporter(isPresented: $isFileImporterPresented, allowedContentTypes: [.pdf]) { result in
+                                switch result {
+                                case .success(let url):
+                                    viewModel.handlePDFSelection(url)
+                                case .failure(let error):
+                                    viewModel.extractionError = error.localizedDescription
+                                }
+                            }
+                        }
+
+                        if viewModel.isExtracting {
+                            HStack {
+                                ProgressView()
+                                Text("Extracting text…")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
 
@@ -61,37 +64,38 @@ struct CreateStudySetView: View {
                     }
                 }
 
-                VStack(alignment: .leading) {
-                    Text("Source Text")
-                        .font(.headline)
-                    TextEditor(text: $viewModel.extractedText)
-                        .frame(minHeight: 220)
-                        .clipShape(.rect(cornerRadius: 16, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(.quaternary)
-                        }
-                        .onChange(of: viewModel.extractedText) { _, newValue in
-                            if viewModel.selectedInput == .paste {
-                                viewModel.handlePasteTextChange(newValue)
+                CardSurface {
+                    VStack(alignment: .leading) {
+                        Text("Source Text")
+                            .font(.headline)
+                        TextEditor(text: $viewModel.extractedText)
+                            .frame(minHeight: 220)
+                            .clipShape(.rect(cornerRadius: 16, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(.quaternary)
                             }
-                        }
+                            .onChange(of: viewModel.extractedText) { _, newValue in
+                                if viewModel.selectedInput == .paste {
+                                    viewModel.handlePasteTextChange(newValue)
+                                }
+                            }
+                    }
                 }
 
-                VStack(alignment: .leading) {
-                    Stepper("Flashcards: \(viewModel.flashcardCount)", value: $viewModel.flashcardCount, in: 4...20)
-                    Stepper("Quiz Questions: \(viewModel.quizCount)", value: $viewModel.quizCount, in: 4...20)
+                CardSurface {
+                    VStack(alignment: .leading) {
+                        Stepper("Flashcards: \(viewModel.flashcardCount)", value: $viewModel.flashcardCount, in: 4...20)
+                        Stepper("Quiz Questions: \(viewModel.quizCount)", value: $viewModel.quizCount, in: 4...20)
+                    }
                 }
-                .padding()
-                .background(.ultraThinMaterial)
-                .clipShape(.rect(cornerRadius: 16, style: .continuous))
 
                 Button("Generate", systemImage: "wand.and.stars") {
                     if let context = viewModel.buildContext() {
                         onGenerate(context)
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .glassButtonStyle(isProminent: true)
                 .disabled(viewModel.buildContext() == nil)
             }
             .padding()
