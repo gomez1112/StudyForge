@@ -1,45 +1,74 @@
 import Foundation
 import FoundationModels
+import Observation
 
-struct FoundationModelService {
+@Observable
+@MainActor
+final class FoundationModelService {
     private let instructions = """
     You are StudyForge. Use ONLY the provided source text. Do not invent facts.
     If the source text lacks required info, say so briefly in the overview or explanation.
     Keep language concise, student-friendly, and grounded. Never include private data.
     """
 
+    private(set) var studySet: StudySetDraft.PartiallyGenerated?
+    private(set) var progress = GenerationProgress()
+    private let session: LanguageModelSession
+
+    var error: Error?
+
+    init() {
+        session = LanguageModelSession(
+            model: SystemLanguageModel.default,
+            instructions: instructions
+        )
+    }
+
     func availabilityStatus() -> ModelAvailabilityStatus {
         ModelAvailabilityStatus.from(SystemLanguageModel.default.availability)
     }
 
-    func streamStudySet(context: GenerationContext) -> AsyncThrowingStream<PartiallyGenerated<StudySetDraft>, Error> {
-        AsyncThrowingStream { continuation in
-            Task {
-                let availability = availabilityStatus()
-                guard availability == .available else {
-                    let message = availabilityMessage(for: availability)
-                    continuation.finish(throwing: GenerationError.unavailable(message))
-                    return
-                }
+    func reset() {
+        studySet = nil
+        progress = GenerationProgress()
+        error = nil
+    }
 
-                let prompt = """
-                Source text:
-                \(context.sourceText)
+    func suggestStudySet(context: GenerationContext) async throws {
+        error = nil
+        let availability = availabilityStatus()
+        guard availability == .available else {
+            let message = availabilityMessage(for: availability)
+            let failure = GenerationError.unavailable(message)
+            error = failure
+            throw failure
+        }
 
-                Create a study set with \(context.flashcardCount) flashcards and \(context.quizCount) quiz questions.
-                """
+        let stream = session.streamResponse(
+            generating: StudySetDraft.self,
+            includeSchemaInPrompt: false
+        ) {
+            "Source text:"
+            context.sourceText
 
-                let session = LanguageModelSession(model: SystemLanguageModel.default, instructions: instructions)
+            "Create a study set with \(context.flashcardCount) flashcards and \(context.quizCount) quiz questions."
+        }
 
-                do {
-                    for try await partial in session.streamResponse(generating: StudySetDraft.self, prompt: prompt) {
-                        continuation.yield(partial)
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: mapError(error))
-                }
+        do {
+            for try await partialResponse in stream {
+                let partialDraft = partialResponse.content
+                studySet = partialDraft
+                progress = GenerationProgress(
+                    title: partialDraft?.title ?? progress.title,
+                    overview: partialDraft?.overview ?? progress.overview,
+                    flashcards: partialDraft?.flashcards ?? progress.flashcards,
+                    quizQuestions: partialDraft?.quizQuestions ?? progress.quizQuestions
+                )
             }
+        } catch {
+            let mappedError = mapError(error)
+            self.error = mappedError
+            throw mappedError
         }
     }
 

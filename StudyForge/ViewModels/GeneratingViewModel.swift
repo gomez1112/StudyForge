@@ -6,34 +6,40 @@ import FoundationModels
 @MainActor
 @Observable
 final class GeneratingViewModel {
-    var progress = GenerationProgress()
     var errorMessage: String?
     var isGenerating: Bool = false
     var completedStudySet: StudySetEntity?
 
     private let modelService = FoundationModelService()
 
+    var progress: GenerationProgress {
+        modelService.progress
+    }
+
     func startGeneration(context: GenerationContext, modelContext: ModelContext) {
         errorMessage = nil
         isGenerating = true
-        progress = GenerationProgress()
+        modelService.reset()
 
         Task {
             do {
-                var latestPartial: PartiallyGenerated<StudySetDraft>?
-                for try await partial in modelService.streamStudySet(context: context) {
-                    latestPartial = partial
-                    progress = GenerationProgress(
-                        title: partial.value?.title ?? progress.title,
-                        overview: partial.value?.overview ?? progress.overview,
-                        flashcards: partial.value?.flashcards ?? progress.flashcards,
-                        quizQuestions: partial.value?.quizQuestions ?? progress.quizQuestions
-                    )
-                }
+                try await modelService.suggestStudySet(context: context)
 
-                guard let finalDraft = latestPartial?.value else {
+                let progress = modelService.progress
+                guard !progress.title.isEmpty,
+                      !progress.overview.isEmpty,
+                      !progress.flashcards.isEmpty,
+                      !progress.quizQuestions.isEmpty
+                else {
                     throw GenerationError.generic("The model did not return a complete study set.")
                 }
+
+                let finalDraft = StudySetDraft(
+                    title: progress.title,
+                    overview: progress.overview,
+                    flashcards: progress.flashcards,
+                    quizQuestions: progress.quizQuestions
+                )
 
                 let studySet = mapToEntity(draft: finalDraft, context: context, modelContext: modelContext)
                 completedStudySet = studySet
