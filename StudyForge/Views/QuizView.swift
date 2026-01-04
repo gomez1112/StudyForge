@@ -12,6 +12,13 @@ struct QuizView: View {
             if viewModel.questions.isEmpty {
                 ContentUnavailableView("No Quiz Questions", systemImage: "checklist")
             } else {
+                StudyProgressHeaderView(
+                    title: "Quiz",
+                    subtitle: "Check your understanding with quick recall.",
+                    progress: Double(viewModel.completedCount) / Double(viewModel.questions.count),
+                    detail: "\(viewModel.completedCount) of \(viewModel.questions.count) answered"
+                )
+
                 ForEach(viewModel.questions) { question in
                     CardSurface {
                         VStack(alignment: .leading) {

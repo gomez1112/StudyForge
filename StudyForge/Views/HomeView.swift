@@ -12,28 +12,48 @@ struct HomeView: View {
 
     var body: some View {
         List {
+            Section {
+                HomeHeroView(summary: viewModel.summary(for: studySets), action: navigateToCreate)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
+
             if viewModel.filteredStudySets(studySets).isEmpty {
                 EmptyStateView(action: navigateToCreate)
                     .listRowSeparator(.hidden)
             } else {
-                ForEach(viewModel.filteredStudySets(studySets)) { studySet in
-                    Button {
-                        navigateToDetail(studySet)
-                    } label: {
-                        StudySetRowView(studySet: studySet)
+                Section("Your Study Sets") {
+                    ForEach(viewModel.filteredStudySets(studySets)) { studySet in
+                        Button {
+                            navigateToDetail(studySet)
+                        } label: {
+                            StudySetRowView(studySet: studySet)
+                        }
+                        .buttonStyle(.plain)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
-                    .buttonStyle(.plain)
+                    .onDelete(perform: deleteStudySets)
                 }
-                .onDelete(perform: deleteStudySets)
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
         .navigationTitle("StudyForge")
         .searchable(text: $viewModel.searchText, placement: .navigationBarDrawer(displayMode: .automatic))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("New Study Set", systemImage: "plus", action: navigateToCreate)
+                    .glassButtonStyle()
             }
+        }
+        .background {
+            LinearGradient(
+                colors: [.indigo.opacity(0.18), .cyan.opacity(0.12)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
         }
     }
 
